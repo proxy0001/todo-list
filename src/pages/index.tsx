@@ -3,7 +3,7 @@ import Head from "next/head";
 import { Heading } from '@adobe/react-spectrum';
 import AppHeader from '../components/AppHeader';
 import AppBody from '../components/AppBody';
-import DemoTaskList from '../components/DemoTaskList'
+import TaskManager from '../components/TaskManager';
 const Home: NextPage = () => {
   return (
     <>
@@ -14,9 +14,9 @@ const Home: NextPage = () => {
       </Head>
       <AppHeader />
       <AppBody>
-        <section className="w-[30rem] max-w-full flex flex-col items-center h-96 mt-10">
+        <section className="w-[32rem] max-w-full flex flex-col items-center h-96 mt-10">
           <Heading level={2}>Login to start or try it here 👇</Heading>
-          <DemoTaskList />
+          <TaskManager />
         </section>
       </AppBody>
     </>

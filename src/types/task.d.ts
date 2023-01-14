@@ -1,4 +1,5 @@
 export type TaskContent = {
+  readonly id?: number,
   readonly title: string,
 }
 

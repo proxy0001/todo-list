@@ -2,6 +2,7 @@ import type { PartialTask, TaskContent, Task, TaskList } from '../types/task'
 import { useState } from 'react'
 import * as O from 'fp-ts/Option'
 import * as A from 'fp-ts/Array'
+import * as B from 'fp-ts/Boolean'
 
 import { pipe } from 'fp-ts/lib/function'
 
@@ -15,45 +16,60 @@ const defaultTaskList: TaskList = [
 export const useTasks = (initTaskList: TaskList = defaultTaskList) => {
   const [taskList, setTaskList] = useState(initTaskList)
 
-  const addTask = (taskContent: TaskContent): void => {
+  const createTask = (taskContent: TaskContent): void => {
     const taskId = taskList.length + 1
     setTaskList([...taskList, { id: taskId, ...taskContent}])
   }
 
-  const updateTask = (updatedTask: Partial<Task>): void => {
-    const f: (task: Task) => O.Option<Task> = task => task.id === updatedTask.id ? O.some({...task, ...updatedTask}) : O.some(task)
-    const updatedList: TaskList = pipe(taskList, A.filterMap(f))
-    setTaskList(updatedList)
+  const pushTask = (updatedTask: Partial<Task>): void => {
+    const isExist = updatedTask?.id !== undefined && taskList.some(task => task.id === updatedTask?.id)
+    pipe(
+      O.some(isExist),
+      O.map(
+        B.match(
+          () => {
+            const { title = '' } = updatedTask
+            createTask({ title })
+          },
+          () => {
+            const updatedList: TaskList = pipe(taskList, A.filterMap(task => 
+              task.id === updatedTask?.id ? O.some({...task, ...updatedTask}) : O.some(task)
+            ))
+            setTaskList(updatedList)
+          }
+        )
+      ),
+    )
   }
 
   const finishTask = (id: Task['id']): void => {
-    updateTask({ id, isFinished: true } as Partial<Task>)
+    pushTask({ id, isFinished: true })
   }
 
   const unfinishTask = (id: Task['id']): void => {
-    updateTask({ id, isFinished: false } as Partial<Task>)
+    pushTask({ id, isFinished: false })
   }
 
   const archiveTask = (id: Task['id']): void => {
-    updateTask({ id, isArchived: true } as Partial<Task>)
+    pushTask({ id, isArchived: true })
   }
 
   const unarchiveTask = (id: Task['id']): void => {
-    updateTask({ id, isArchived: false } as Partial<Task>)
+    pushTask({ id, isArchived: false })
   }
 
   const deleteTask = (id: Task['id']): void => {
-    updateTask({ id, isDeleted: true } as Partial<Task>)
+    pushTask({ id, isDeleted: true })
   }
 
   const undeleteTask = (id: Task['id']): void => {
-    updateTask({ id, isDeleted: false } as Partial<Task>)
+    pushTask({ id, isDeleted: false })
   }
 
   return {
     taskList,
-    addTask,
-    updateTask,
+    createTask,
+    pushTask,
     finishTask,
     unfinishTask,
     archiveTask,
