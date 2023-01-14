@@ -94,6 +94,20 @@ export default config;
 
 剩下的時間我們把功能大概實作一下，目前寫的還有點醜，也沒有接後端，但大致上將功能實作出來，初步可以使用了，後面再繼續調整。
 
+### Day 3 & Day 4
+
+對整體有個概念之後，我們今天把 fp-ts 引入進來使用，並從 DDD 的概念著手，重新思考一次如何建模。
+
+大概看一下 FP 的實作上的概念，最困難的應該是 Algebraic structure 了，許多基本概念都是源自於此，還要花上一段時間全部看過跟熟悉，這邊先看個感覺。中文很推薦這篇：[ Functional Programming For Everyone ](https://ithelp.ithome.com.tw/articles/10262566)。大概快速看了一半，剩下的還要再看。
+
+然後開始寫之後，困難重重。經常遇到型別報錯、輸入輸出跟預期不符、對 fp-ts 熟悉度不夠、基礎概念不足、不知道從何查起等等一堆問題。例如基底類型想要使用 Option，但實作時經常搞不懂 fp-ts 的概念跟邏輯，導致各種問題曾出不窮。還有個型別報錯，搞了半天還是不知道是為何？結果最後是使用的地方匯入錯誤，根本跟邏輯無關啊啊啊啊。
+
+總之，裝了 fp-ts 之後，試著用該邏輯改寫之後，就是災難的開始。花了兩天多都在處理一些不知道為何而錯的情況。最後連 Option 都沒用上，很多地方知道要的結果是什麼，但完全實作不出來。
+
+## Day 5
+
+今天把新增功能跟編輯功能完成，並且整理一版 Code。又遇到了一次 React-Spectrum 的問題，暫時都不用它的 Collection or Group 相關的組件，避免潛在問題。
+
 ## Create T3 App
 
 This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
