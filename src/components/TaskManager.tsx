@@ -12,7 +12,6 @@ import type { EditingObj } from './EditTask';
 import type { SpectrumCheckboxProps } from '@adobe/react-spectrum';
 import * as A from 'fp-ts/Array'
 import { pipe } from 'fp-ts/function'
-export { TaskModelType } from "../hooks/useTaskModel";
 
 
 export interface TaskManagerProps {

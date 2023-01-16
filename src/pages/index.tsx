@@ -5,13 +5,14 @@ import AppHeader from '../components/AppHeader';
 import AppBody from '../components/AppBody';
 import TaskManager from '../components/TaskManager';
 import { useSession } from "next-auth/react";
-import { useTasks } from "../hooks/useTasks";
-import { TaskModelType } from "../hooks/useTaskModel";
+import usePrismaTaskModel from "../hooks/usePrismaTaskModel";
+import useDemoTaskModel from "../hooks/useDemoTaskModel";
 
 const Home: NextPage = () => {
   const { data: sessionData, status: sessionStatus } = useSession();
-  const demoModel = useTasks({modelType: TaskModelType.Demo})
-  const prismaModel = useTasks({modelType: TaskModelType.Prisma})
+  const demoModel = useDemoTaskModel()
+  const prismaModel = usePrismaTaskModel()
+  
   const model = sessionData ? prismaModel : demoModel
   const isLoading = sessionStatus === 'loading'
   const userName = sessionData && sessionData.user?.name || 'bff'
