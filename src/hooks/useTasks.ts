@@ -23,14 +23,13 @@ export const useTasks = (initTaskList: TaskList = defaultTaskList) => {
 
   const pushTask = (updatedTask: Partial<Task>): void => {
     const isExist = updatedTask?.id !== undefined && taskList.some(task => task.id === updatedTask?.id)
+    const { title = '' } = updatedTask
+    const taskContent: TaskContent = { title }
     pipe(
       O.some(isExist),
       O.map(
         B.match(
-          () => {
-            const { title = '' } = updatedTask
-            createTask({ title })
-          },
+          () => createTask(taskContent),
           () => {
             const updatedList: TaskList = pipe(taskList, A.filterMap(task => 
               task.id === updatedTask?.id ? O.some({...task, ...updatedTask}) : O.some(task)

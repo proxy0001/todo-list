@@ -1,5 +1,5 @@
-import { signIn, signOut, useSession } from "next-auth/react";
-import { Heading, View, Flex, Button, Text } from '@adobe/react-spectrum';
+import { Heading, View, Flex } from '@adobe/react-spectrum';
+import UserInfo from './UserInfo'
 
 const AppHeader = () => {
   return (
@@ -15,22 +15,3 @@ const AppHeader = () => {
 };
 
 export default AppHeader;
-
-const UserInfo = () => {
-  const { data: sessionData } = useSession();
-  const onPress = sessionData ? () => void signOut() : () => void signIn();
-
-  return (
-    <Flex alignItems="center" gap="size-100">
-      <Text>
-        { sessionData && sessionData.user?.name }
-      </Text>
-      <Button
-        variant="primary"
-        onPress={onPress}
-      >
-        <Text>{sessionData ? "Sign out" : "Sign in"}</Text>
-      </Button>
-    </Flex>
-  );
-};

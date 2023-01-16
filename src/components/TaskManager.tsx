@@ -1,19 +1,16 @@
-import { ActionMenu, TextField, ActionButton, ButtonGroup, Header, ActionGroup, Content, Heading, Flex, Tabs, TabList, TabPanels, Checkbox, Text, Item } from '@adobe/react-spectrum';
-import type { Task, TaskList, PartialTask, TaskContent } from "../types/task";
+import { ActionButton, ButtonGroup, Header, Content, Heading, Flex, Tabs, TabList, TabPanels, Checkbox, Text, Item } from '@adobe/react-spectrum';
+import type { Task, TaskList, PartialTask } from "../types/task";
 import { useTasks } from "../hooks/useTasks";
-import { useEffect, useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import TaskListIcon from '@spectrum-icons/workflow/TaskList';
-import CheckmarkIcon from '@spectrum-icons/workflow/Checkmark';
 import ArchiveIcon from '@spectrum-icons/workflow/Archive';
 import ArchiveRemoveIcon from '@spectrum-icons/workflow/ArchiveRemove';
 import DeleteIcon from '@spectrum-icons/workflow/Delete';
 import AddIcon from '@spectrum-icons/workflow/Add';
-import CloseIcon from '@spectrum-icons/workflow/Close';
 import EditIcon from '@spectrum-icons/workflow/Edit';
 import { EditTask, NULL_EDITING_OBJ, NEW_EDITING_OBJ_ID, NEW_EDITING_OBJ } from './EditTask';
 import type { EditingObj } from './EditTask';
 import type { SpectrumCheckboxProps } from '@adobe/react-spectrum';
-import type { Key } from 'react';
 import * as A from 'fp-ts/Array'
 import { pipe } from 'fp-ts/function'
 
