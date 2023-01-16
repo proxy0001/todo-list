@@ -66,8 +66,9 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
  */
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+import { OpenApiMeta } from 'trpc-openapi';
 
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.meta<OpenApiMeta>().context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape }) {
     return shape;
