@@ -1,6 +1,5 @@
 import { ActionButton, ButtonGroup, Header, Content, Heading, Flex, Tabs, TabList, TabPanels, Checkbox, Text, Item } from '@adobe/react-spectrum';
-import type { Task, TaskList, PartialTask } from "../types/task";
-import { useTasks } from "../hooks/useTasks";
+import type { Task, TaskList, PartialTask, TaskModel } from "../types/task";
 import { useState, useLayoutEffect } from "react";
 import TaskListIcon from '@spectrum-icons/workflow/TaskList';
 import ArchiveIcon from '@spectrum-icons/workflow/Archive';
@@ -13,6 +12,12 @@ import type { EditingObj } from './EditTask';
 import type { SpectrumCheckboxProps } from '@adobe/react-spectrum';
 import * as A from 'fp-ts/Array'
 import { pipe } from 'fp-ts/function'
+export { TaskModelType } from "../hooks/useTaskModel";
+
+
+export interface TaskManagerProps {
+  model: TaskModel
+}
 
 enum Actions {
   Cancel = 'CANCEL',
@@ -45,10 +50,8 @@ const todosFilter = filterGenerator(task => !task.isFinished && !task.isArchived
 const finishesFilter = filterGenerator(task => task.isFinished === true && !task.isArchived && !task.isDeleted)
 const archivesFilter = filterGenerator(task => task.isArchived === true && !task.isDeleted)
 
-
-export const TaskManager = () => {
-  // const { data: taskList = [], isError, isLoading } = api.task.list.useQuery();
-  const { taskList, pushTask, finishTask, unfinishTask, archiveTask, unarchiveTask, deleteTask } = useTasks()
+export const TaskManager = ({ model }: TaskManagerProps) => {
+  const { taskList, pushTask, finishTask, unfinishTask, archiveTask, unarchiveTask, deleteTask } = model
   const [todos, setTodos] = useState(todosFilter(taskList))
   const [finishes, setFinishes] = useState(finishesFilter(taskList))
   const [archives, setArchives] = useState(archivesFilter(taskList))

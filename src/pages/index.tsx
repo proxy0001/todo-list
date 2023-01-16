@@ -1,10 +1,23 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { Heading } from '@adobe/react-spectrum';
+import { Heading, Flex } from '@adobe/react-spectrum';
 import AppHeader from '../components/AppHeader';
 import AppBody from '../components/AppBody';
 import TaskManager from '../components/TaskManager';
+import { useSession } from "next-auth/react";
+import { useTasks } from "../hooks/useTasks";
+import { TaskModelType } from "../hooks/useTaskModel";
+
 const Home: NextPage = () => {
+  const { data: sessionData, status: sessionStatus } = useSession();
+  const demoModel = useTasks({modelType: TaskModelType.Demo})
+  const prismaModel = useTasks({modelType: TaskModelType.Prisma})
+  const model = sessionData ? prismaModel : demoModel
+  const isLoading = sessionStatus === 'loading'
+  const userName = sessionData && sessionData.user?.name || 'bff'
+  const pageTitle = sessionData ?
+    `Hi ${ userName }  👋` :
+    'Login to start or try it here 👇'
   return (
     <>
       <Head>
@@ -14,10 +27,17 @@ const Home: NextPage = () => {
       </Head>
       <AppHeader />
       <AppBody>
-        <section className="w-[32rem] max-w-full flex flex-col items-center h-96 mt-10">
-          <Heading level={2}>Login to start or try it here 👇</Heading>
-          <TaskManager />
-        </section>
+        <Flex width="32rem" maxWidth="100%" margin="size-400" direction="column" alignItems="center">
+          { isLoading ?
+            <Flex minHeight="24rem" justifyContent="center" alignItems="center">
+              <Heading level={3}>Loading...</Heading>
+            </Flex> :
+            <>
+              <Heading level={2}>{ pageTitle } </Heading>
+              <TaskManager model={model} />
+            </>
+          }
+        </Flex>
       </AppBody>
     </>
   );

@@ -1,46 +1,25 @@
-export type TaskContent = {
-  readonly id?: number,
-  readonly title: string,
-}
-
 export type Task = {
   readonly id: number,
-  readonly title: string,
-  readonly isFinished?: boolean,
-  readonly isArchived?: boolean,
-  readonly isDeleted?: boolean,
+  title: string,
+  isFinished?: boolean,
+  isArchived?: boolean,
+  isDeleted?: boolean,
 }
-
+export type TaskContent = {
+  readonly id?: Task['id'],
+  title: Task['title'],
+}
 export type PartialTask = Partial<Task>
-
 export type TaskList = Task[]
-export type Tasks = Task[]
 
-// export interface Todo extends Task {
-//   readonly isFinished?: false,
-//   readonly isArchived?: false,
-//   readonly isDeleted?: false,
-// }
-
-// export interface FinishedTodo extends Todo {
-//   readonly isFinished: true,
-//   readonly isArchived?: false,
-//   readonly isDeleted?: false,
-// }
-
-// export interface ArchivedTodo extends Todo {
-//   readonly isFinished?: boolean,
-//   readonly isArchived: true,
-//   readonly isDeleted?: false,
-// }
-
-// export interface DeletedTodo extends Todo {
-//   readonly isFinished?: boolean,
-//   readonly isArchived?: boolean,
-//   readonly isDeleted: true,
-// }
-
-// export type TodoList = Todo[]
-// export type FinishedTodoList = FinishedTodo[]
-// export type ArchivedTodoList = ArchivedTodo[]
-// export type DeletedTodoList = DeletedTodo[]
+export interface TaskModel {
+  taskList: TaskList
+  createTask: (taskContent: TaskContent) => void
+  pushTask: (updatedTask: PartialTask) => void
+  finishTask: (id: Task['id']) => void
+  unfinishTask: (id: Task['id']) => void
+  archiveTask: (id: Task['id']) => void
+  unarchiveTask: (id: Task['id']) => void
+  deleteTask: (id: Task['id']) => void
+  undeleteTask: (id: Task['id']) => void
+}
