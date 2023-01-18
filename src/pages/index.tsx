@@ -10,8 +10,11 @@ import useDemoTaskModel from "../hooks/useDemoTaskModel";
 
 const Home: NextPage = () => {
   const { data: sessionData, status: sessionStatus } = useSession();
-  const demoModel = useDemoTaskModel()
-  const prismaModel = usePrismaTaskModel()
+  
+  const userId = sessionData && sessionData.user?.id || undefined
+  const modelProps = { userId }
+  const demoModel = useDemoTaskModel(modelProps)
+  const prismaModel = usePrismaTaskModel(modelProps)
   
   const model = sessionData ? prismaModel : demoModel
   const isLoading = sessionStatus === 'loading'
