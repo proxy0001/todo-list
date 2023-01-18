@@ -2,6 +2,23 @@
 
 使用新工具們做一個 todo-list，包含[create-t3-app](https://create.t3.gg/), [tRPC](https://trpc.io/), [Prisma](https://www.prisma.io/), [NextAuth.js](https://next-auth.js.org/), [React Spectrum](https://react-spectrum.adobe.com/), [Class Variance Authority](https://github.com/joe-bell/cva) 等。
 
+
+## 總結與詳細說明
+
+- [Online Demo](https://t3-todo-list.vercel.app/)
+- [Source Code](https://github.com/proxy0001/todo-list)
+- [總結與詳細說明](https://github.com/proxy0001/todo-list#總結與詳細說明)
+
+耗時 8 天，細節太多沒有記錄到，總結一下在此。
+
+一共實現了這些功能
+- 首頁 無須登入就可以嘗試使用 Todo List，藉此展示功能。
+- 使用 Discord 登入，有自己的 Todo List 可以使用，持久儲存。
+
+這次用 [create-t3-app](https://create.t3.gg/) 來建置環境，基本上算全端了，基底是 [Next.js](https://nextjs.org/)，使用 [Prisma](https://www.prisma.io/) 作為 ORM, 使用 [tRPC](https://trpc.io/) 基本上後端 API 就是基於它實作，default 搭配 [Zod](https://github.com/colinhacks/zod) 做型別驗證，可以保證前後端類型安全。然後用 [trpc-openapi](https://github.com/jlalmes/trpc-openapi) 這個插件協助轉成 OpenAPI Spec，再用 [swagger-ui-react](https://github.com/swagger-api/swagger-ui) 作為後台 API 介面。 UI Library 選用 Adobe 出的 [React-Spectrum](https://react-spectrum.adobe.com/react-spectrum/index.html)，邏輯實現有使用到 [fp-ts](https://gcanti.github.io/fp-ts/)，登入使用 [NextAuth.js](https://next-auth.js.org/)。以上全部都是第一次使用，各種碰壁。
+
+另外 DB 使用 PostgreSQL，部署在 [Railway](https://railway.app/)，App 部署在 [Vercel](https://vercel.com)
+
 ## 過程紀錄
 
 ### Day 0
@@ -107,6 +124,10 @@ export default config;
 ## Day 5
 
 今天把新增功能跟編輯功能完成，並且整理一版 Code。又遇到了一次 React-Spectrum 的問題，暫時都不用它的 Collection or Group 相關的組件，避免潛在問題。
+
+## Day 6 ~ Day 8
+
+一言以敝之，好多問題。😭
 
 ## Create T3 App
 
