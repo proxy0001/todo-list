@@ -9,17 +9,410 @@
 - [Source Code](https://github.com/proxy0001/todo-list)
 - [總結與詳細說明](https://github.com/proxy0001/todo-list#總結與詳細說明)
 
+### 開發模式
+```
+npm run dev
+```
+- Swagger UI: http://localhost:3000/api-doc
+- 前台: http://localhost:3000
+
+### 總結
 耗時 8 天，細節太多沒有記錄到，總結一下在此。
 
-一共實現了這些功能
+實現這些功能
 - 首頁 無須登入就可以嘗試使用 Todo List，藉此展示功能。
 - 使用 Discord 登入，有自己的 Todo List 可以使用，持久儲存。
 
-這次用 [create-t3-app](https://create.t3.gg/) 來建置環境，基本上算全端了，基底是 [Next.js](https://nextjs.org/)，使用 [Prisma](https://www.prisma.io/) 作為 ORM, 使用 [tRPC](https://trpc.io/) 基本上後端 API 就是基於它實作，default 搭配 [Zod](https://github.com/colinhacks/zod) 做型別驗證，可以保證前後端類型安全。然後用 [trpc-openapi](https://github.com/jlalmes/trpc-openapi) 這個插件協助轉成 OpenAPI Spec，再用 [swagger-ui-react](https://github.com/swagger-api/swagger-ui) 作為後台 API 介面。 UI Library 選用 Adobe 出的 [React-Spectrum](https://react-spectrum.adobe.com/react-spectrum/index.html)，邏輯實現有使用到 [fp-ts](https://gcanti.github.io/fp-ts/)，登入使用 [NextAuth.js](https://next-auth.js.org/)。以上全部都是第一次使用，各種碰壁。
+這次用 [create-t3-app](https://create.t3.gg/) 來建置環境，基本上算全端了，基底是 [Next.js](https://nextjs.org/)，使用 [Prisma](https://www.prisma.io/) 作為 ORM，使用 [tRPC](https://trpc.io/)，可以保證前後端類型安全，基本上後端 API 就是基於它實作，default 搭配 [Zod](https://github.com/colinhacks/zod) 做型別驗證。然後用 [trpc-openapi](https://github.com/jlalmes/trpc-openapi) 這個插件協助轉成 OpenAPI Spec，再用 [swagger-ui-react](https://github.com/swagger-api/swagger-ui) 作為後台 API 介面。 UI Library 選用 Adobe 出的 [React-Spectrum](https://react-spectrum.adobe.com/react-spectrum/index.html)，邏輯實現有使用到 [fp-ts](https://gcanti.github.io/fp-ts/)，登入使用 [NextAuth](https://next-auth.js.org/)。以上用到的工具除了 Next.js 都是第一次使用。
 
 另外 DB 使用 PostgreSQL，部署在 [Railway](https://railway.app/)，App 部署在 [Vercel](https://vercel.com)
 
-## 過程紀錄
+### 詳細說明
+
+#### 專案結構 說明
+
+```
+.
+├── prisma
+│   ├── migrations // DB migrations
+│   └── schema.prisma // DB Schema
+├── src
+│   ├── components // 前端視覺組件
+│   │   └── TaskManager.tsx // 包含 Todo List 所有功能的大組件
+│   ├── hooks
+│   │   ├── useDemoTaskModel.ts // 展示用的資料狀態管理
+│   │   └── usePrismaTaskModel.ts // 接 DB 用的資料狀態管理
+│   ├── pages
+│   │   ├── api // 所有自動產生的 API 接口實現
+│   │   │   └── openapi.json.ts // openAPI Doc File
+│   │   ├── api-doc.tsx // swagger UI
+│   │   └── index.tsx // 前端首頁
+│   ├── server
+│   │   ├── api
+│   │   │   ├── routers // 後端 API 接口定義處
+│   │   │   │   └── task.ts // API 實現
+│   ├── types
+│   │   └── task.ts // Shared Mental Model 定義
+
+```
+
+#### 環境建置
+[create-t3-app](https://create.t3.gg/) 就可以很容易地配置好基礎環境，否則要整合那些工具還是很費工的，[Next.js](https://nextjs.org/) 跟 [TypeScript](https://www.typescriptlang.org/)，以及一些 Lint 跟 Prettier 等等，是基本配備，另外可以選用 [Prisma](https://www.prisma.io/)、[Tailwind](https://tailwindcss.com/)、[tRPC](https://trpc.io/)、[NextAuth](https://next-auth.js.org/)。這次全部都選用。
+
+#### Domain-Driven Design
+
+原本是用 TS 進行 Shared Mental Model 的塑造，但後來發現 API 的部分需要使用 [Zod](https://github.com/colinhacks/zod) 定義以便驗證，因此後來就改用 [Zod](https://github.com/colinhacks/zod) 的方式定義，再轉成 Type。
+
+這裡有個問題是，它轉出來的 Type 比較醜，閱讀起來很累，另外其實原本是希望用 TypeScript 寫，再轉成 Zod，這個問題好像有看到解決方案，但還沒處理。另一種思路是用 Primsa 根據 Schema 自動產出的 Type 為基礎。
+
+```typescript
+// src/types/task.ts
+
+import { z } from "zod"
+
+...
+export const task = z.object({
+  id: z.number(),
+  userId,
+  title: z.string(),
+  isFinished: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+export type Task = z.infer<typeof task>
+
+...
+
+export const taskModel = z.object({
+  userId,
+  todoList: taskList,
+  finishList: taskList,
+  archiveList: taskList,
+  createTask: z.function().args(task).returns(z.void()),
+  pushTask: z.function().args(task).returns(z.void()),
+  finishTask: z.function().args(task).returns(z.void()),
+  unfinishTask: z.function().args(task).returns(z.void()),
+  archiveTask: z.function().args(task).returns(z.void()),
+  unarchiveTask: z.function().args(task).returns(z.void()),
+  deleteTask: z.function().args(task).returns(z.void()),
+})
+export type TaskModel = z.infer<typeof taskModel>
+
+export const taskSchema = {
+  userId,
+  task,
+  noHeadTask,
+  todo,
+  finish,
+  archive,
+  todoList: taskList,
+  finishList: taskList,
+  archiveList: taskList,
+  taskModel,
+}
+export default taskSchema
+```
+
+
+#### 登入驗證
+
+[create-t3-app](https://create.t3.gg/) 已經把相關邏輯跟實作都內建了，剩下的只要照著[說明](https://create.t3.gg/en/usage/first-steps)做一些配置就可以實現 Discord 登入登出了，其他的要再看 NextAuth 的說明。DB Schema 是 使用 NextAuth 針對 Prisma 的 [Adapter](https://next-auth.js.org/adapters/prisma)。
+
+#### 資料庫相關實作
+
+基本上就是使用 [Prisma](https://www.prisma.io/)。寫起來像這樣：
+
+```prisma
+// prisma/schema.prisma
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    accounts      Account[]
+    sessions      Session[]
+    tasks         Task[]
+}
+
+model Task {
+    id         Int       @id @default(autoincrement())
+    userId     String
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    title      String    @db.Text
+    isFinished Boolean   @default(false)
+    isArchived Boolean   @default(false)
+    user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+```
+
+Schema 寫好之後，儲存，使用它的 Cli，就可以自動產生 migrations，檔案並且執行。檔案會放在 prisma/migrations/ 底下。
+
+```
+npx prisma migrate dev --name init
+```
+
+接著就可以使用 [PrismaClient](https://www.prisma.io/docs/getting-started/quickstart#4-explore-how-to-send-queries-to-your-database-with-prisma-client) 對資料庫進行操作了。 create-t3-app 對相關工具進行了整合，所以在 Code 裡面不需要自行調用 PrismaClient，可以直接從 context 裡面獲取。
+
+### Backend API 實作
+
+使用 create-t3-app 所配置好的方式實作，就可以直接搭配 [tRPC](https://trpc.io/) 使用。使用 [tRPC](https://trpc.io/) 的好處是什麼？就是直接可以吃到資料庫 Schema 所定義的型別，在開發過程中，就可以看到提示跟類型錯誤的警示。並且會搭配使用 [Zod](https://github.com/colinhacks/zod) 在 runtime 時進行驗證以確保資料型別的正確性。另外自行配置 [trpc-openapi](https://github.com/jlalmes/trpc-openapi) 插件，就可以自動產出符合 OpenAPI Spec 的 Document。然後可以用 [swagger-ui-react](https://github.com/swagger-api/swagger-ui) 架後台畫面出來。 Swagger UI: http://localhost:3000/api-doc
+
+範例如下：
+```typescript
+// src/server/api/routers/task.ts
+export const taskRouter = createTRPCRouter({
+  todoList: protectedProcedure
+    .meta({ openapi: {
+      method: 'GET',
+      path: '/todoList',
+      tags: ['task'],
+      summary: 'Read all tasks of the user.',
+    }})
+    .input(taskSchema.task.pick({ userId: true }))
+    .output(taskSchema.todoList)
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.task.findMany({
+        where: {
+          userId: input.userId,
+          isFinished: false,
+          isArchived: false,
+        },
+        orderBy: {
+          id: 'desc'
+        }
+      })
+    }),
+  create: protectedProcedure
+    .meta({ openapi: {
+        method: 'POST',
+        path: '/tasks',
+        tags: ['task'],
+        summary: 'Create a task.',
+    }})
+    .input(taskSchema.noHeadTask)
+    .output(taskSchema.task)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.prisma.task.create({
+        data: input
+      })
+    }),
+  ...
+});
+```
+
+這裡有個問題，原本是希望 path 長得像這樣 /users/{userId}/tasks/{id}，但不知道為什麼一直失敗，目前還未解決。
+
+### 前端實作
+
+沒有另外引入狀態管理的工具，基本上就只使用 React Hooks 解決。在 index.tsx 可以看到使用了兩個 Model Hooks，一個是 for 首頁展示用的，一個是 for 真實資料庫介接使用的。然後根據使用者是否有登入，切換放入 TaskManager 的 model 是哪個。
+
+```tsx
+// src/pages/index.tsx
+
+const Home: NextPage = () => {
+  const { data: sessionData, status: sessionStatus } = useSession();  
+  const userId = sessionData && sessionData.user?.id || undefined
+  const modelProps = { userId }
+  const demoModel = useDemoTaskModel(modelProps)
+  const prismaModel = usePrismaTaskModel(modelProps)
+  ...
+
+  return (
+    <>
+      <AppBody>
+        ...
+          <TaskManager model={model} />
+        ...
+      </AppBody>
+    </>
+  );
+};
+
+export default Home;
+
+```
+
+TaskManager 負責視覺呈現跟互動邏輯，跟資料操作與狀態管理相關的事情，都是使用傳入的 model 處理。傳入的 Model 必須要有符合的功能。
+```tsx
+// src/components/TaskManager.tsx
+export interface TaskManagerProps {
+  model: TaskModel
+}
+
+export const TaskManager = ({ model }: TaskManagerProps) => {
+  const { todoList, finishList, archiveList, pushTask, finishTask, unfinishTask, archiveTask, unarchiveTask, deleteTask } = model
+
+  const commands: Commands = {
+    CANCEL: () => setEditingTask(NULL_EDITING_TASK),
+    CREATE: (task = NEW_EDITING_TASK) => setEditingTask(task),
+    SUBMIT: task => {
+      task && pushTask(task)
+      setEditingTask(NULL_EDITING_TASK)
+    },
+    UPDATE: task => setEditingTask({ ...task } as Task),
+    FINISH: task => finishTask(task),
+    UNFINISH: task => unfinishTask(task),
+    ARCHIVE: task => archiveTask(task),
+    UNARCHIVE: task => unarchiveTask(task),
+    DELETE: task => deleteTask(task),
+  }
+...
+```
+
+useDemoTaskModel 負責展示用的資料狀態管理。部分邏輯使用 fp-ts 的方式實作。
+```ts
+// src/hooks/useDemoTaskModel.tsx
+  const [taskList, setTaskList] = useState(defaultTaskList)
+  const [todoList, setTodoList] = useState(todosFilter(taskList))
+  const [finishList, setFinishList] = useState(finishesFilter(taskList))
+  const [archiveList, setArchiveList] = useState(archivesFilter(taskList))
+
+  useLayoutEffect(() => {
+    const sorted = [...taskList].sort((a: Task, b: Task): number => a.id < 0 ? -1 : b.id - a.id)
+    setTodoList(todosFilter(sorted))
+    setFinishList(finishesFilter(sorted))
+    setArchiveList(archivesFilter(sorted))
+  }, [taskList])
+
+  const pushTask: TaskModel['pushTask'] = (updatedTask: Task): void => {
+    const isExist = taskList.some(task => task.id === updatedTask.id)
+    pipe(
+      O.some(isExist),
+      O.map(
+        B.match(
+          () => createTask(updatedTask),
+          () => {
+            const updatedList: TaskList = pipe(taskList, A.filterMap(task => 
+              task.id === updatedTask?.id ? O.some({...task, ...updatedTask}) : O.some(task)
+            ))
+            setTaskList(updatedList)
+            return updatedTask
+          }
+        ),
+      ),
+    )
+  }
+```
+
+usePrismaTaskModel 負責實際接資料庫的相關資料狀態管理。使用 create-t3-app 整合的 [tRPC](https://trpc.io/) 來打 API，基本上 [tRPC](https://trpc.io/) 內建是使用 [React-Query](https://react-query-v3.tanstack.com/)，因此會看到 useQuery 用來獲取獲取，以及 useMutaion 來處理更新。
+
+另外在資料更動的時候，從 onMutate 的時候，可以插入先行調整呈現的資料，等到資料更新的 API 打完之後，再去重新獲取資料一次，可以改善使用者體驗，不需要等待 API 打完回來，就可以偷跑看到更新結果。
+
+```ts
+// src/hooks/usePrismaTaskModel.ts
+export const usePrismaTaskModel: UseTaskModel = ({ userId = '' } = {}) => {
+  const utils = api.useContext()
+
+  const [todoList, setTodoList] = useState<TaskList>([])
+  const { data: newTodoList } = api.task.todoList.useQuery({ userId })
+
+  useLayoutEffect(() => {
+    setTodoList(newTodoList || [])
+  }, [newTodoList])
+
+  const createTaskMutation = api.task.create.useMutation({
+    async onMutate (newTask) {
+      // Cancel outgoing fetches (so they don't overwrite our optimistic update)
+      await utils.task.todoList.cancel();
+      // // Get the data from the queryCache
+      const prevData = utils.task.todoList.getData();
+      // // Optimistically update the data with our new post
+      const tmpNewTaskForDisplay = { ...newTask, id: -2 }
+      utils.task.todoList.setData({ userId }, (old) => old ? [tmpNewTaskForDisplay, ...old] : []);
+      // // Return the previous data so we can revert if something goes wrong
+      return { prevData };
+    },
+    async onSettled () {
+      // Sync with server once mutation has settled
+      await utils.task.todoList.invalidate();
+    }
+  })
+
+  const createTask: TaskModel['createTask'] = task => {
+    const { id, ...noHeadTask } = task
+    createTaskMutation.mutate(noHeadTask, {
+      onSuccess: (data, variables, context) => {
+        console.log(`created`, data)
+      },
+      onError: (error, variables, context) => {
+        console.log(`An error happened! ${error.message}`)
+      },
+    })
+  }
+```
+
+這邊後來想要分三個 list 各自打 API 獲取資料，但是這個改動幅度太大了，導致時間上太趕著寫， 實作的方式並不是很好，未來需要重構。另外也導致 onMutate 先行更改畫面的資料，但實現上使用體驗不佳的問題。以及另一個原本拿當前呈現的資料的方法，不知道為什麼忽然都拿不到，原本是可以的，找不太到原因。
+
+```ts
+const pushTaskMutation = api.task.push.useMutation({
+    async onMutate (newTask) {      
+      // TODO: don't know why getData() always return undefined
+      const prevTodoList = utils.task.todoList.getData()
+      ...
+    }
+})
+```
+
+最後 HTML 的部分，幾乎都是使用 [React Spectrum](https://react-spectrum.adobe.com/) 處理，使用的時候，遇到不少坑。最大的問題是不知道為何，跟 Next.js 一起用的時候，跟 Collections 有關的組件都會有問題，目前無解，都先不用。以及另一個是，我找不到它希望怎麼樣定義字體的官方方式，所以都沒特別修改字體大小。
+
+```tsx
+// src/components/TaskManager.tsx
+<Content margin="size-200" marginBottom="size-800">
+  {
+    editingTask && isNewEditing(editingTask) ?
+      <EditTask
+        task={editingTask}
+        onSubmit={commands[Actions.Submit]}
+        onCansel={commands[Actions.Cancel]}
+      /> :
+      null
+  }
+  
+  {todoList.map(task => {
+    return (
+      editingTask && isEditing(editingTask, task) ?
+        <EditTask
+          key={`editing-${task.id}`}
+          task={editingTask}
+          onSubmit={commands[Actions.Submit]}
+          onCansel={commands[Actions.Cancel]}
+        /> :
+        <Flex key={task.id} justifyContent="space-between">
+          <Checkbox marginEnd="size-200" flexGrow={1} isSelected={task.isFinished} onChange={onCheckboxChange(task)}>
+            {task.title}
+          </Checkbox>
+          <ButtonGroup>
+            <ActionButton isQuiet onPress={e => commands[Actions.Update](task)} aria-label="Edit task"><EditIcon /></ActionButton>
+            <ActionButton isQuiet onPress={e => commands[Actions.Archive](task)} aria-label="Archive task"><ArchiveIcon /></ActionButton>
+            <ActionButton isQuiet onPress={e => commands[Actions.Delete](task)} aria-label="Delete task"><DeleteIcon /></ActionButton>
+          </ButtonGroup>
+        </Flex>
+    )
+  })}
+</Content>
+```
+
+### Review
+
+總結一下遇到的問題：
+- 如何用 TypeScript 定義 Type ，再轉成 Zod 的定義?
+- 使用 NextAuth 增加不同的登入方式
+- 使用 trpc-openapi 的插件時， path parameters 一直都有問題，目前還未解決，例如 /users/{userId}/tasks/{id}
+- fp-ts 需要重頭看起，目前大概知道怎麼用的功能很少，實際原理也一知半解，底層概念沒完整看完，導致實作上經常不知道該怎麼辦。
+- 重構 usePrismaTaskModel ，主要是分三個 list 的改寫，第一版的實現非常不好，不易懂也不好維護。
+- 更改資料之後的使用體驗不佳，需要一併修正。
+- React Spectrum 跟 Next.js 搭配使用時，使用 COllections 相關的組件都會有問題。
+- React Spectrum 不知道官方設計是希望如何定義字體
+- 還沒寫單元測試跟整合測試
+- 時間分配不當，沒有寫到測試，也來不及詳細紀錄過程，多做了太多其他的東西
+- 最後時間太趕，收尾不乾淨
+
+## 過程紀錄 (可以不用看了，重要的都在上面講到了)
 
 ### Day 0
 
