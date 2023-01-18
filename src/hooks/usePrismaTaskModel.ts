@@ -21,10 +21,6 @@ export const usePrismaTaskModel: UseTaskModel = ({ userId = '' } = {}) => {
   const { data: newTodoList } = api.task.todoList.useQuery({ userId })
   const { data: newFinishList } = api.task.finishList.useQuery({ userId })
   const { data: newArchiveList } = api.task.archiveList.useQuery({ userId })
-  
-  console.log('todoList', todoList)
-  console.log('finishList', finishList)
-  console.log('archiveList', archiveList)
 
   useLayoutEffect(() => {
     setTodoList(newTodoList || [])
@@ -79,8 +75,6 @@ export const usePrismaTaskModel: UseTaskModel = ({ userId = '' } = {}) => {
   const fromWhichToWich = (oldTask: Task | undefined, newTask: Task | undefined): WhichListRes => {
     const fromWhich = oldTask && checkList(oldTask)
     const toWhich = newTask && checkList(newTask)
-    console.log('fromWhich', fromWhich)
-    console.log('toWhich', toWhich)
     return { fromWhich, toWhich }
   }
   const whichListName = (task: Task | undefined): ListNames | undefined => {

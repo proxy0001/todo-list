@@ -76,7 +76,6 @@ export const taskRouter = createTRPCRouter({
     .input(taskSchema.noHeadTask)
     .output(taskSchema.task)
     .mutation(async ({ ctx, input }) => {
-      console.log('input', input)
       return await ctx.prisma.task.create({
         data: input
       })
@@ -115,5 +114,3 @@ export const taskRouter = createTRPCRouter({
       })
     }),
 });
-
-console.log(taskSchema)
