@@ -1,15 +1,11 @@
-import type { TaskList, TaskModel, Task, NoHeadTask } from '../types/task'
-// import { TaskList } from '../types/task'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import type { TaskList, TaskModel, Task } from '../types/task'
+import { useLayoutEffect, useState } from 'react'
 import * as O from 'fp-ts/Option'
 import * as A from 'fp-ts/Array'
 import * as B from 'fp-ts/boolean'
-import * as TO from 'fp-ts/taskOption'
 import { pipe } from 'fp-ts/lib/function'
 import type { UseTaskModel } from './useTaskModel'
 import { api } from "../utils/api"
-import { arch } from 'os'
-import { List } from 'postcss/lib/list'
 
 export const usePrismaTaskModel: UseTaskModel = ({ userId = '' } = {}) => {
   const utils = api.useContext()

@@ -1,5 +1,5 @@
 import { ActionButton, ButtonGroup, Header, Content, Heading, Flex, Tabs, TabList, TabPanels, Checkbox, Text, Item } from '@adobe/react-spectrum';
-import type { Task, TaskList, TaskModel } from "../types/task";
+import type { Task, TaskModel } from "../types/task";
 import { useState } from "react";
 import TaskListIcon from '@spectrum-icons/workflow/TaskList';
 import ArchiveIcon from '@spectrum-icons/workflow/Archive';
