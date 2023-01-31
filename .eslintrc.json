@@ -1,3 +1,8 @@
+/*
+ * prevent eslint unbound-method error for using toBeCalled and similar matches in jest tests.
+ * @see https://typescript-eslint.io/rules/unbound-method/
+ * @see https://github.com/jest-community/eslint-plugin-jest/blob/main/docs/rules/unbound-method.md
+ */
 {
   "overrides": [
     {
@@ -8,6 +13,14 @@
       "parserOptions": {
         "project": "tsconfig.json"
       }
+    },
+    {
+      "files": ["*.test.ts"],
+      "plugins": ["jest"],
+      "rules": {
+        "@typescript-eslint/unbound-method": "off",
+        "jest/unbound-method": "error"
+      }
     }
   ],
   "parser": "@typescript-eslint/parser",
@@ -17,6 +30,7 @@
   "plugins": ["@typescript-eslint"],
   "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
   "rules": {
-    "@typescript-eslint/consistent-type-imports": "warn"
+    "@typescript-eslint/consistent-type-imports": "warn",
+    "@typescript-eslint/unbound-method": "error"
   }
 }
