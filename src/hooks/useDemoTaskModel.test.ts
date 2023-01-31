@@ -39,7 +39,7 @@ describe('Test useDemoTaskModel', () => {
   })
 
   describe('create task', () => {
-     it('add a new task in todo list', () => {
+     it('should add a new task in todo list', () => {
         const { result } = setup()
         const newTask = { id: 0, title: 'create task', userId: result.current.userId }
         
@@ -53,7 +53,7 @@ describe('Test useDemoTaskModel', () => {
   })
 
   describe('delete task', () => {
-    it('delete a task in todo list', () => {
+    it('should delete a task in todo list', () => {
        const { result } = setup()
        const todoTask = { id: 1, userId: '', title: 'task X', isFinished: false, isArchived: false }
 
@@ -64,7 +64,7 @@ describe('Test useDemoTaskModel', () => {
        expect(result.current.todoList.length).toBe(0)
    })
 
-   it('delete a task in finished list', () => {
+   it('should delete a task in finished list', () => {
       const { result } = setup()
       const finishedTask = { id: 3, userId: '', title: 'task C', isFinished: true, isArchived: false }
 
@@ -75,7 +75,7 @@ describe('Test useDemoTaskModel', () => {
       expect(result.current.finishList.length).toBe(0)
     })
 
-    it('delete a task in archived list', () => {
+    it('should delete a task in archived list', () => {
       const { result } = setup()
       const archivedTask = { id: 2, userId: '', title: 'task B', isFinished: false, isArchived: true }
 
@@ -88,7 +88,7 @@ describe('Test useDemoTaskModel', () => {
   })
 
   describe('push task, most use to change content', () => {
-    it('update a exist task in todo list to change title text', () => {
+    it('should update a exist task in todo list to change title text', () => {
       const { result } = setup()
       const todoTask = { id: 1, userId: '', title: 'task X', isFinished: false, isArchived: false }
 
@@ -102,7 +102,7 @@ describe('Test useDemoTaskModel', () => {
   })
 
   describe('finish task', () => {
-    it('update a exist task in todo list to be finished', () => {
+    it('should update a exist task in todo list to be finished', () => {
       const { result } = setup()
       const todoTask = { id: 1, userId: '', title: 'task X', isFinished: false, isArchived: false }
 
@@ -115,7 +115,7 @@ describe('Test useDemoTaskModel', () => {
       expect(result.current.finishList[1]).toMatchObject({ ...todoTask, isFinished: true })
     })
 
-    it('update a exist task in archived list to be finished', () => {
+    it('should update a exist task in archived list to be finished', () => {
       const { result } = setup()
       const archivedTask = { id: 2, userId: '', title: 'task B', isFinished: false, isArchived: true }
 
@@ -129,7 +129,7 @@ describe('Test useDemoTaskModel', () => {
   })
 
  describe('unfinish task', () => {
-  it('update a exist task in finish list to be todo', () => {
+  it('should update a exist task in finish list to be todo', () => {
     const { result } = setup()
     const finishedTask = { id: 3, userId: '', title: 'task C', isFinished: true, isArchived: false }
 
@@ -142,7 +142,7 @@ describe('Test useDemoTaskModel', () => {
     expect(result.current.todoList[0]).toMatchObject({ ...finishedTask, isFinished: false })
   })
 
- it('update a exist task in archived list to be unfinished', () => {
+ it('should update a exist task in archived list to be unfinished', () => {
     const { result } = setup()
     const archivedTask = { id: 2, userId: '', title: 'task B', isFinished: false, isArchived: true }
 
@@ -156,7 +156,7 @@ describe('Test useDemoTaskModel', () => {
 })
 
  describe('archive task', () => {
-    it('update a exist task in todo list to be archived', () => {
+    it('should update a exist task in todo list to be archived', () => {
       const { result } = setup()
       const todoTask = { id: 1, userId: '', title: 'task X', isFinished: false, isArchived: false }
 
@@ -169,7 +169,7 @@ describe('Test useDemoTaskModel', () => {
       expect(result.current.archiveList[1]).toMatchObject({...todoTask, isArchived: true})
     })
 
-    it('update a exist task in finished list to be archived', () => {
+    it('should update a exist task in finished list to be archived', () => {
       const { result } = setup()
       const finishedTask = { id: 3, userId: '', title: 'task C', isFinished: true, isArchived: false }
 
@@ -184,7 +184,7 @@ describe('Test useDemoTaskModel', () => {
   })
 
   describe('unarchive task', () => {
-    it('update a exist task in archived list to be unarchived', () => {
+    it('should update a exist task in archived list to be unarchived', () => {
       const { result } = setup()
       const archivedTask = { id: 2, userId: '', title: 'task B', isFinished: false, isArchived: true }
 
