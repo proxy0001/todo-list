@@ -19,6 +19,11 @@ const commonConfig: Config = {
   transform: {
     "^.+\\.mjs$": "ts-jest",
   },
+  coveragePathIgnorePatterns: [
+    "<rootDir>/build/",
+    "<rootDir>/node_modules/",
+    "<rootDir>/src/utils/"
+  ]
 };
 
 /**
@@ -31,9 +36,19 @@ const config: Config = {
   projects: [
     {
       ...commonConfig,
-      displayName: 'server',
+      displayName: 'server:unit',
       rootDir: "<rootDir>/src/server",
       testEnvironment: "node",
+      // default testMatch: [ "**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)" ]
+      testMatch: [ "**/__tests__/**/*.unit.[jt]s?(x)", "**/?(*.unit.)+(spec|test).[jt]s?(x)" ]
+    },
+    {
+      ...commonConfig,
+      displayName: 'server:integration',
+      rootDir: "<rootDir>/src/server",
+      testEnvironment: "node",
+      // default testMatch: [ "**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)" ]
+      testMatch: [ "**/__tests__/**/*.integration.[jt]s?(x)", "**/?(*.integration.)+(spec|test).[jt]s?(x)" ]
     },
     {
       ...commonConfig,

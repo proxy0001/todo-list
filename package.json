@@ -8,9 +8,14 @@
     "postinstall": "prisma generate",
     "lint": "next lint",
     "start": "next start",
-    "test": "jest --watch",
-    "test:coverage": "jest --watchAll --coverage",
-    "test:ci": "jest --ci"
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "test:setup": "npm run docker:up && npx dotenv -e .env.test prisma migrate deploy",
+    "test": "npm run test:setup && npx dotenv -e .env.test -- jest --watch",
+    "test:server": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects server:unit server:integration --watch",
+    "test:client": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects client --watch",
+    "test:coverage": "npm run test:setup && npx dotenv -e .env.test -- jest --watchAll --coverage",
+    "test:ci": "npm run test:setup && npx dotenv -e .env.test -- jest --ci"
   },
   "dependencies": {
     "@adobe/react-spectrum": "^3.24.1",
@@ -44,6 +49,7 @@
     "@typescript-eslint/parser": "^5.47.1",
     "autoprefixer": "^10.4.7",
     "dotenv": "^16.0.3",
+    "dotenv-cli": "^7.0.0",
     "eslint": "^8.30.0",
     "eslint-config-next": "13.1.1",
     "jest": "^29.4.1",
