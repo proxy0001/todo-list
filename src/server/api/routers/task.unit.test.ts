@@ -1,6 +1,6 @@
 import type { inferProcedureInput } from '@trpc/server'
 import type { AppRouter } from '../root'
-import { mockData, setupCallerWithMockPrisma} from '../../../utils/testUtils.server'
+import { mockData, setupCallerWithMockPrisma} from '../../../utils/testUtils'
 
 /**
  * how to test tRPC APIs with Mock Prisma

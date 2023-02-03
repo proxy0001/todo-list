@@ -6,7 +6,15 @@ import * as B from 'fp-ts/boolean'
 import { pipe } from 'fp-ts/lib/function'
 import type { UseTaskModel } from './useTaskModel'
 import { api } from "../utils/api"
-
+/**
+ * FIXME: [Issue] sometimes will have TRPCError BAD_REQUEST when calling APIs
+ * This is an issue with usePrismaTaskModel and is not caused by the test code.
+ * the reason is when we display updated task before API callback, we don't know the id it is.
+ * at that time, we will git it a temp id.
+ * If someone get the task in list is not just for display but use to do CRUD, it will find nothing in db.
+ * 
+ * TODO: Need refactor usePrismaTaskModel to fix these issues.
+ */
 export const usePrismaTaskModel: UseTaskModel = ({ userId = '' } = {}) => {
   const utils = api.useContext()
 
@@ -204,7 +212,7 @@ export const usePrismaTaskModel: UseTaskModel = ({ userId = '' } = {}) => {
     const { id, ...noHeadTask } = task
     createTaskMutation.mutate(noHeadTask, {
       onSuccess: (data, variables, context) => {
-        console.log(`created`, data)
+        // console.log(`created`, data)
       },
       onError: (error, variables, context) => {
         console.log(`An error happened! ${error.message}`)

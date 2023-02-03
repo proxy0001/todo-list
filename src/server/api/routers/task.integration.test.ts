@@ -1,7 +1,7 @@
 import { prisma } from '../../db'
 import type { inferProcedureInput } from '@trpc/server'
 import type { AppRouter } from '../root'
-import { mockData, setupCaller} from '../../../utils/testUtils.server'
+import { mockData, setupCaller} from '../../../utils/testUtils'
 /**
  * how to do integration test with real Prisma
  * @see https://www.prisma.io/docs/guides/testing/integration-testing

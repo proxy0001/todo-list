@@ -37,14 +37,25 @@ export const mockData = (() => {
 })()
 
 /**
+ * prepare mock session for testing
+ */
+export const createMockSession = (): Session => {
+  const d = new Date()
+  const expiresDate = new Date(d.getFullYear() + 1, d.getMonth(), d.getDate())
+  return {
+    user: mockData.userData,
+    expires: expiresDate.toISOString(),
+  }
+}
+
+/**
  * prepare caller to call tRPC APIs with real prisma
  */
 export const setupCaller = () => {
-  const mockSession: Session = {
-    expires: new Date().toISOString(),
-    user: mockData.userData as Session['user'],
+  const mockCtx = {
+    session: createMockSession(),
+    prisma: prisma
   }
-  const mockCtx = { session: mockSession, prisma: prisma }
   return appRouter.createCaller(mockCtx)
 }
 
@@ -62,14 +73,34 @@ export type SetupCallerWithMockPrisma = (mockPrismaResponse: MockPrismaResponse)
  */
 export const setupCallerWithMockPrisma: SetupCallerWithMockPrisma = mockPrismaResponse => {
   const mockPrisma = mockDeep<PrismaClient>()
-  const mockSession: Session = {
-    expires: new Date().toISOString(),
-    user: mockData.userData as Session['user'],
+  const mockSession = createMockSession()
+  const mockCtx = {
+    session: mockSession,
+    prisma: mockPrismaResponse(mockPrisma)
   }
-  const mockCtx = { session: mockSession, prisma: mockPrismaResponse(mockPrisma) }
   return {
     caller: appRouter.createCaller(mockCtx),
     ...mockCtx,
   }
 }
 
+/**
+ * mock Next Auth to prevent this issue
+ * @see https://github.com/nextauthjs/next-auth/issues/4866
+ */
+export const mockNextAuth = () => {
+  jest.mock("next-auth", () => ({
+    __esModule: true,
+    default: jest.fn(),
+    unstable_getServerSession: jest.fn(
+      () =>
+        new Promise((resolve) => {
+          resolve({
+            expiresIn: undefined,
+            loggedInAt: undefined,
+            someProp: "someString",
+          })
+        }),
+    ),
+  }))
+}

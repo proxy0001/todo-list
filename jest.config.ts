@@ -23,7 +23,7 @@ const commonConfig: Config = {
     "<rootDir>/build/",
     "<rootDir>/node_modules/",
     "<rootDir>/src/utils/"
-  ]
+  ],
 };
 
 /**
@@ -50,6 +50,25 @@ const config: Config = {
       // default testMatch: [ "**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)" ]
       testMatch: [ "**/__tests__/**/*.integration.[jt]s?(x)", "**/?(*.integration.)+(spec|test).[jt]s?(x)" ]
     },
+    /**
+     * REVIEW: [Issue] Import Node Code in Front-end Testing
+     * the issue is from here: ./src/hooks/usePrismaTaskModel.integration.test.ts
+     * 
+     * ### transform:
+     * Add mjs because create-t3-app use mjs in some where
+     * Add @babel/plugin-proposal-private-methods to solve some problem
+     * 
+     * ### transformIgnorePatterns:
+     * We need transform some ESM libraries.
+     * So transform all from node_modules, not by default because of performance.
+     * 
+     * TODO: Study Vitest
+     * An example of t3 app testing is using Vitest and is much easier to set up 
+     * and seems to have better performance.
+     * 
+     * @see https://github.com/briangwaltney/t3-testing-example
+     * @see https://vitest.dev/
+     */
     {
       ...commonConfig,
       displayName: 'client',
@@ -58,6 +77,14 @@ const config: Config = {
       setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
       moduleDirectories: ["node_modules", "<rootDir>/"],
       testEnvironment: "jest-environment-jsdom",
+      transform: {
+        // Use babel-jest to transpile tests with the next/babel preset
+        // https://jestjs.io/docs/configuration#transform-objectstring-pathtotransformer--pathtotransformer-object
+        '^.+\\.(mjs|js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'], "plugins": ["@babel/plugin-proposal-private-methods"] }],
+      },
+      transformIgnorePatterns: [
+        // '<rootDir>/node_modules/',
+      ],
     }
   ],
 };

@@ -10,12 +10,13 @@
     "start": "next start",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
+    "server:test": "npm run test:setup && dotenv -e .env.test -- next dev -p 3005",
     "test:setup": "npm run docker:up && npx dotenv -e .env.test prisma migrate deploy",
-    "test": "npm run test:setup && npx dotenv -e .env.test -- jest --watch",
-    "test:server": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects server:unit server:integration --watch",
-    "test:client": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects client --watch",
-    "test:coverage": "npm run test:setup && npx dotenv -e .env.test -- jest --watchAll --coverage",
-    "test:ci": "npm run test:setup && npx dotenv -e .env.test -- jest --ci"
+    "test": "npm run test:setup && npx dotenv -e .env.test -- jest --runInBand --watch",
+    "test:server": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects server:unit server:integration --runInBand --watch",
+    "test:client": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects client --runInBand --watch",
+    "test:coverage": "npm run test:setup && npx dotenv -e .env.test -- jest --runInBand --watchAll --coverage",
+    "test:ci": "npm run test:setup && npx dotenv -e .env.test -- jest --ci --runInBand"
   },
   "dependencies": {
     "@adobe/react-spectrum": "^3.24.1",
@@ -30,6 +31,7 @@
     "fp-ts": "^2.13.1",
     "next": "13.1.1",
     "next-auth": "^4.18.7",
+    "node-fetch": "^3.3.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "superjson": "1.9.1",
@@ -38,6 +40,7 @@
     "zod": "^3.20.2"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-methods": "^7.18.6",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@types/jest": "^29.4.0",
