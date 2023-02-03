@@ -50,13 +50,18 @@ npm run test:client
 
 ### 添加測試的總結與詳細說明
 
-搞了三天多，目前前後端共有這幾隻測試項目。
+花了三天多的時間，目前前後端共有這幾隻測試項目。
 - 後端
   - src/server/api/routers/task.unit.test.ts
   - src/server/api/routers/task.integration.test.ts
 - 前端
   - src/hooks/useDemoTaskModel.unit.test.ts
   - src/hooks/usePrismaTaskModel.integration.test.ts
+- 測試環境相關的配置檔案
+  - jest.config.ts
+  - jest.setup.ts
+  - package.json
+  - docker-compose.yaml
 
 後端主要針對 APIs 進行測試，單元測試使用 Mock Prisma 的方式進行，主要針對 API Functions 的邏輯進行測試。整合測試使用 Docker 在本地部署測試資料庫，針對 API Functions 進行測試。
 
