@@ -8,6 +8,7 @@
 - [Online Demo](https://t3-todo-list.vercel.app/)
 - [Source Code](https://github.com/proxy0001/todo-list)
 - [總結與詳細說明](https://github.com/proxy0001/todo-list#總結與詳細說明)
+- [添加測試的總結與詳細說明](https://github.com/proxy0001/todo-list#添加測試的總結與詳細說明)
 
 ### 開發模式
 ```
@@ -15,6 +16,274 @@ npm run dev
 ```
 - Swagger UI: http://localhost:3000/api-doc
 - 前台: http://localhost:3000
+
+### 測試方式
+
+注意執行測試之前，需要有安裝 docker，因整合測試使用 docker 在本地部署資料庫以利測試使用。
+
+另需注意執行測試前，目前需要先手動執行以下命令，在 local 起 server，以進行測試。主要是為了前端整合測試使用: usePrismataskModel.ts，如果沒有要測試這隻，可以不用。
+
+```
+npm run server:test
+```
+
+執行所有測試，包含前後端的整合測試與單元測試，同樣需要先執行上述命令。
+```
+npm run test
+```
+
+執行所有測試，並統計覆蓋率
+```
+npm run test:coverage
+```
+
+
+執行伺服器端的所有測試
+```
+npm run test:server
+```
+
+執行前端的所有測試
+```
+npm run test:client
+```
+
+### 添加測試的總結與詳細說明
+
+搞了三天多，目前前後端共有這幾隻測試項目。
+- 後端
+  - src/server/api/routers/task.unit.test.ts
+  - src/server/api/routers/task.integration.test.ts
+- 前端
+  - src/hooks/useDemoTaskModel.unit.test.ts
+  - src/hooks/usePrismaTaskModel.integration.test.ts
+
+後端主要針對 APIs 進行測試，單元測試使用 Mock Prisma 的方式進行，主要針對 API Functions 的邏輯進行測試。整合測試使用 Docker 在本地部署測試資料庫，針對 API Functions 進行測試。
+
+前端主要針對跟處理資料的 hooks 進行測試，其中最重要的是 usePrismaTaskModel 這隻。目前對其提供的各個 Functions 進行整合測試，會起 server 在 local，讓 Hook 內部真實打 API 去資料庫獲取資料回傳。另一隻 useDemoTaskModel 只進行單元測試，因其沒有依賴外部 API。
+
+usePrismaTaskModel 如果要進行單元測試，目前的想法是用 Mock API 的方式進行，但現階段還不清楚該如何 Mock tRPC 所產生的 APIs。
+
+#### 測試環境準備
+用 docker 部署測試資料庫，使用 .env.test 設置測試時要用的資料庫。其中因為整合測試會打同一個測試資料庫，因此執行測試時不能夠同時進行：使用 jest --runInBand 改成依序進行。
+
+因目前要測試時還要手動起 server，後續考慮使用 [npm-call-all](https://github.com/mysticatea/npm-run-all)，看看能不能避免手動起 server 的這個步驟，讓 CI/CD 能自動執行。
+
+```json
+{
+  "scripts": {
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "test:setup": "npm run docker:up && npx dotenv -e .env.test prisma migrate deploy",
+    "server:test": "npm run test:setup && dotenv -e .env.test -- next dev -p 3005",
+    "test": "npm run test:setup && npx dotenv -e .env.test -- jest --runInBand --watch",
+    "test:server": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects server:unit server:integration --runInBand --watch",
+    "test:client": "npm run test:setup && npx dotenv -e .env.test -- jest --selectProjects client --runInBand --watch",
+    "test:coverage": "npm run test:setup && npx dotenv -e .env.test -- jest --runInBand --watchAll --coverage",
+  }
+}
+```
+
+#### Jest 測試環境建置
+
+使用 Jest，利用 projects 的設定將前後端的測試環境分開設置。其中最麻煩的是 usePrismaTaskModel，為了要讓 tRPC Client 端能順利運作，目前引入了許多 jsdom 環境不支援的實作與相依套件（許多原本是預設在 Node 環境下執行的），因此在設置部分吃了許多苦頭。
+
+另外有考慮改用 [Vitest](https://vitest.dev/) 試試，因其自帶 ESM 開箱即用，並且據說效能較好？ 或許可以改善許多這次環境建置所遇到的問題，例如在 jsdom 環境中，需要引入 ESM 套件等類似問題，但不知道會不會有其他延伸狀況。
+
+參考資料:
+- https://nextjs.org/docs/testing#setting-up-jest-with-the-rust-compiler
+- https://www.youtube.com/watch?v=YRGo1H-qNQs
+
+```ts
+// jest.config.ts
+const config: Config = {
+  coverageProvider: "v8",
+  projects: [
+    {
+      ...commonConfig,
+      displayName: 'server:unit',
+      rootDir: "<rootDir>/src/server",
+      testEnvironment: "node",
+      testMatch: [ "**/__tests__/**/*.unit.[jt]s?(x)", "**/?(*.unit.)+(spec|test).[jt]s?(x)" ]
+    },
+    {
+      ...commonConfig,
+      displayName: 'server:integration',
+      rootDir: "<rootDir>/src/server",
+      testEnvironment: "node",
+      testMatch: [ "**/__tests__/**/*.integration.[jt]s?(x)", "**/?(*.integration.)+(spec|test).[jt]s?(x)" ]
+    },
+    {
+      ...commonConfig,
+      displayName: 'client',
+      rootDir: "<rootDir>",
+      testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/src/server/"],
+      setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+      moduleDirectories: ["node_modules", "<rootDir>/"],
+      testEnvironment: "jest-environment-jsdom",
+      transform: {
+        '^.+\\.(mjs|js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'], "plugins": ["@babel/plugin-proposal-private-methods"] }],
+      },
+      transformIgnorePatterns: [],
+    }
+  ],
+};
+```
+
+#### 後端 API 單元測試
+
+主要需要研究如何手動產生 tRPC 的 API caller 以及對 Prisma 進行 Mock。
+
+參考資源:
+- https://create.t3.gg/en/usage/trpc/#sample-integration-test
+- https://www.youtube.com/watch?v=YRGo1H-qNQs
+- https://github.com/ResoluteError/jest-tRPC-example
+
+
+```javascript
+// src/utils/testUtils.ts
+export const setupCallerWithMockPrisma: SetupCallerWithMockPrisma = mockPrismaResponse => {
+  const mockPrisma = mockDeep<PrismaClient>()
+  const mockSession = createMockSession()
+  const mockCtx = {
+    session: mockSession,
+    prisma: mockPrismaResponse(mockPrisma)
+  }
+  return {
+    caller: appRouter.createCaller(mockCtx),
+    ...mockCtx,
+  }
+}
+
+// src/server/api/routers/task.unit.test.ts
+describe('test task APIs with mock Prisma', () => {
+  it('should return all todos of the user', async () => {
+    type Input = inferProcedureInput<AppRouter['task']['todoList']>
+    const input: Input = {
+      userId: mockData.userId
+    }
+    
+    const mockOutput = mockData.todoList
+    const { caller, prisma } = setupCallerWithMockPrisma(mockPrisma => {
+      mockPrisma.task.findMany.mockResolvedValue(mockOutput)
+      return mockPrisma
+    })
+
+    const result = await caller.task.todoList(input)
+    expect(prisma.task.findMany).toHaveBeenCalled()
+    expect(result).toHaveLength(mockOutput.length)
+    expect(result).toStrictEqual(mockOutput)
+  })
+})
+```
+
+#### 後端 API 整合測試
+結合上述作法但使用真實資料庫進行測試，測試資料庫需要另外事先準備。
+
+參考資料
+- https://www.prisma.io/docs/guides/testing/integration-testing
+
+```javascript
+// src/server/api/routers/task.integration.test.ts
+
+beforeAll(async () => {
+  await prisma.user.create({
+    data: mockData.userData
+  })
+  await prisma.task.createMany({
+    data: mockData.taskData
+  })
+})
+
+afterAll(async () => {
+  await prisma.$transaction([
+    prisma.task.deleteMany(),
+    prisma.user.deleteMany(),
+  ])
+
+  await prisma.$disconnect()
+})
+
+describe('test task APIs with real db', () => {
+  const caller = setupCaller()
+
+  it('should return all todos of the user', async () => {
+    type Input = inferProcedureInput<AppRouter['task']['todoList']>
+    const input: Input = {
+      userId: mockData.userId
+    }
+    const result = await caller.task.todoList(input)
+    expect(result).toHaveLength(mockData.todoList.length)
+    expect(result).toMatchObject(mockData.todoList)
+  })
+})
+
+```
+
+#### 前端 Hook 單元測試
+TODO: usePrismaTaskModel 如果要進行單元測試，目前的想法是用 Mock API 的方式進行，但現階段還不清楚該如何 Mock tRPC & useQuery/useMutate Response。
+
+#### 前端 Hook 整合測試
+最主要就是測 usePrismaTaskModel 這隻。其中測試環境的建置花了好多時間研究該如何做，有好幾個問題要處理：
+1. 如何 Mock Next Auth 以及 Mock Session
+2. 如何讓 tRPC Client 可以正常運作？
+  1. Mock 相關的 Providers
+3. 為了解決上述問題，引入了許多基於 Node 而非基於 jsdom 的測試環境的套件，導致各種相容性問題要處理。
+
+參考資料:
+- https://github.com/trpc/trpc/discussions/3612
+- https://github.com/briangwaltney/t3-testing-example
+- https://github.com/nextauthjs/next-auth/issues/4866
+
+```javascript
+// src/utils/testWrapper.tsx
+...
+export const hookWrapper = (user?: User) =>
+  function wrapperOptions(props: { children: React.ReactNode }) {
+    const session = user ? createSession(user) : undefined
+    return <AllTheProviders {...props} session={ session } />
+  };
+
+
+// src/hooks/usePrismaTaskModel.integration.test.ts
+describe('create task', () => {
+    it('should add a new task in todo list', async () => {
+      const { result } = setup()
+      const originLength = result.current.todoList.length
+
+      result.current.createTask(mockData.newTodoTask)
+            
+      await waitFor(() => {
+        expect(result.current.todoList.length).toBe(originLength + 1)
+        const newTask = {
+          ...mockData.newTodoTask,
+          id: result.current.todoList[0]?.id
+        }
+        expect(result.current.todoList).toContainEqual(newTask)
+      })
+  })
+})
+```
+
+#### Review
+
+還可以做哪些測試
+- usePrismaTaskModel 的 單元測試（要如何 Mock tRPC & useQuery/useMutate Response ?）
+- 增加前端組件測試
+- 前端 e2e 測試，使用 [playwright](https://playwright.dev/)
+- 目前都只有寫 Happy Test，應該要包含錯誤情境與邊界情況等測試項目
+
+可以繼續優化的地方
+- 避免手動起 server for 整合測試，讓 CI 可以自動執行測試。(看 [npm-run-all](https://github.com/mysticatea/npm-run-all) 能不能解決)
+- .env.test 的環境變數感覺可以在 jest.config 裡面引入，不需要從 command 上導入。
+- 使用 [Vitest](https://vitest.dev/) 看配置與效能方面，會不會比 Jest 好。
+- usePrismaTaskModel 的整合測試，目前測試項目之間會共享資料跟狀態，不應該這樣子做。目前知道可以使用 beforeEach 跟 afterEach 重置資料庫的資料，但還不知道該如何重置 Hook 的狀態？目前 hook 內部的 state 會受到上一個測試項目的影響。
+- usePrismaTask 的實作有幾個問題存在，導致目前測試有時候會失敗，需要對其 Refactor。
+
+遇到的問題
+- create-t3-app 目前沒有比較好的建議測試方式，相關的資料也偏少，導致我們在建置測試環境上遇到許多的問題，花費的時間比想像中多非常多，且這還是在有找到一些相關討論的情況下，如果沒有，依目前的理解，可能會完全不知道該如何處理。
+
+
 
 ### 總結
 耗時 8 天，細節太多沒有記錄到，總結一下在此。
