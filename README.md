@@ -274,17 +274,19 @@ describe('create task', () => {
 
 還可以做哪些測試
 - usePrismaTaskModel 的 單元測試（要如何 Mock tRPC & useQuery/useMutate Response ?）
-- 增加前端組件測試
+- 增加前端 component 的單元測試/功能測試
 - 前端 e2e 測試，使用 [playwright](https://playwright.dev/)
 - 目前都只有寫 Happy Test，應該要包含錯誤情境與邊界情況等測試項目
 
 可以繼續優化的地方
+- 在 Vercel or Github 的 CI/CD 流程增加測試流程，使其能自動化執行。
 - 避免手動起 server for 整合測試，讓 CI 可以自動執行測試。(看 [npm-run-all](https://github.com/mysticatea/npm-run-all) 能不能解決)
 - coverage 的計算，可以濾掉一些沒有要做測試的地方，讓最後的涵蓋率更為精準。
 - .env.test 的環境變數感覺可以在 jest.config 裡面引入，不需要從 command 上導入。
 - 使用 [Vitest](https://vitest.dev/) 看配置與效能方面，會不會比 Jest 好。
 - usePrismaTaskModel 的整合測試，目前測試項目之間會共享資料跟狀態，不應該這樣子做。目前知道可以使用 beforeEach 跟 afterEach 重置資料庫的資料，但還不知道該如何重置 Hook 的狀態？目前 hook 內部的 state 會受到上一個測試項目的影響。
 - usePrismaTask 的實作有幾個問題存在，導致目前測試有時候會失敗，需要對其 Refactor。
+
 
 遇到的問題
 - create-t3-app 目前沒有比較好的建議測試方式，相關的資料也偏少，導致我們在建置測試環境上遇到許多的問題，花費的時間比想像中多非常多，且這還是在有找到一些相關討論的情況下，如果沒有，依目前的理解，可能會完全不知道該如何處理。
