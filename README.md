@@ -280,6 +280,7 @@ describe('create task', () => {
 
 可以繼續優化的地方
 - 避免手動起 server for 整合測試，讓 CI 可以自動執行測試。(看 [npm-run-all](https://github.com/mysticatea/npm-run-all) 能不能解決)
+- coverage 的計算，可以濾掉一些沒有要做測試的地方，讓最後的涵蓋率更為精準。
 - .env.test 的環境變數感覺可以在 jest.config 裡面引入，不需要從 command 上導入。
 - 使用 [Vitest](https://vitest.dev/) 看配置與效能方面，會不會比 Jest 好。
 - usePrismaTaskModel 的整合測試，目前測試項目之間會共享資料跟狀態，不應該這樣子做。目前知道可以使用 beforeEach 跟 afterEach 重置資料庫的資料，但還不知道該如何重置 Hook 的狀態？目前 hook 內部的 state 會受到上一個測試項目的影響。
