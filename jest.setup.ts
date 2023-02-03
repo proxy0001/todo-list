@@ -10,6 +10,8 @@ import '@testing-library/jest-dom'
  * some library need it with jsdom
  * @see https://github.com/jsdom/jsdom/issues/2524
  */
-import { TextEncoder, TextDecoder } from 'util'
-global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
+import { TextEncoder, TextDecoder } from 'util';
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+(global as any).TextEncoder = TextEncoder;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+(global as any).TextDecoder = TextDecoder;
