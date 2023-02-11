@@ -1,14 +1,15 @@
 # t3-todo-list
 
-使用新工具們做一個 todo-list，包含[create-t3-app](https://create.t3.gg/), [tRPC](https://trpc.io/), [Prisma](https://www.prisma.io/), [NextAuth.js](https://next-auth.js.org/), [React Spectrum](https://react-spectrum.adobe.com/), [Class Variance Authority](https://github.com/joe-bell/cva) 等。
+使用新工具們做一個 todo-list，包含[create-t3-app](https://create.t3.gg/), [tRPC](https://trpc.io/), [Prisma](https://www.prisma.io/), [NextAuth.js](https://next-auth.js.org/), [React Spectrum](https://react-spectrum.adobe.com/) 等等。
 
 
-## 總結與詳細說明
+## 專案說明大綱
 
 - [Online Demo](https://t3-todo-list.vercel.app/)
 - [Source Code](https://github.com/proxy0001/todo-list)
 - [總結與詳細說明](https://github.com/proxy0001/todo-list#總結與詳細說明)
 - [添加測試的總結與詳細說明](https://github.com/proxy0001/todo-list#添加測試的總結與詳細說明)
+- [重構的總結與詳細說明](https://github.com/proxy0001/todo-list#重構的總結與詳細說明)
 
 ### 開發模式
 ```
@@ -47,6 +48,128 @@ npm run test:server
 ```
 npm run test:client
 ```
+
+### 重構的總結與詳細說明
+花了三天，把核心的 Model 以及對應的 Compoenent 進行重構。
+
+主要的問題是在使用時有三個 List，會分別列出不同狀態下的任務：
+- 代辦清單
+- 已完成的代辦清單
+- 封存的代辦清單
+
+而當將代辦事項變成已完成時，該任務會從代辦清單移動到已完成。
+
+原本是用一個大 Model 處理 3 個 List 的所有資料與狀態管理，並提供完成任務、取消完成任務等方法，但會遇到完成任務時，還要根據任務改變前後的狀態不同，去反推要更新哪幾個清單的顯示。
+
+重構之後，將其改成 3 個小 Models 各自分開，提供自己的方法，並各自對應一個 TaskList Component 顯示。最後在 TaskManager 中整合使用。由TaskManager 觸發不同清單所提供的方法，並更新另一個清單的顯示。
+
+#### 檔案結構
+
+修改前後的檔案結構如下:
+
+Before:
+- src/components/TaskManager.tsx // 整合三個 List 的大組件
+- src/components/EditTask.tsx // 編輯用的小組件
+- src/hooks/usePrismaTaskModel.ts // 整合三個 List 的大 Model
+
+After:
+- src/components/TaskManager/TaskManager.tsx // 整合三個 List 的大組件
+- src/components/TaskManager/TaskList.tsx // 單獨一個 List 的組件
+- src/components/EditTask.tsx // 編輯用的小組件
+- src/hooks/taskListModel/useTodoListModel.ts // 代辦清單 Model
+- src/hooks/taskListModel/useFinishListModel.ts // 已完成的代辦清單 Model
+- src/hooks/taskListModel/useArchiveListModel.ts // 封存的代辦清單 Model
+- src/hooks/taskListModel/utils.ts // 共用方法
+- src/hooks/taskListModel/_useTaskListModel.ts // 未完成，預計要實現一個通用的清單 Model Hook，用傳入參數的方式區分差異
+
+#### 修改前的問題
+
+只有一個大 Model 提供這些方法與三個 Lists
+```javascript
+  const taskModel: TaskModel = {
+    userId,
+    // 三個 List
+    todoList,
+    finishList,
+    archiveList,
+    // 更改任務狀態的方法
+    createTask,
+    pushTask,
+    finishTask,
+    unfinishTask,
+    archiveTask,
+    unarchiveTask,
+    deleteTask,
+  }
+```
+更改 Task 狀態的這些方法對應的是後端的處理實作，而原本的設計是不需要知道呈現面的問題，例如執行 finishTask 的方法時，代辦清單應該要少一個任務，而已完成的代辦清單要多一個。可是這時候，Model 只知道 哪個 Task 的狀態要怎麼改變，卻不知道它原本在哪個清單，是否會移動到另一個清單的這些資訊。
+
+這個資訊應該是要從 Controller 呼叫 Model 提供的更新清單方法才對，但另一個問題是，還需要考慮到 optimitic update 相關的實作方式。第一版快速的做法，但也是最不好的做法，是用任務的狀態改變反推要影響哪些清單。
+
+#### 修改後的思路
+
+一個 Model 只負責處理一個 List 的資料狀態，並對應一個 TaskList 呈現。由 TaskManager 這個組件負責控制三個 Lists 的整合。
+
+```jsx
+// src/components/TaskManager/TaskManager.tsx
+
+const onTodoListFinishMutate = (updatedTask: Task) => {
+  console.log('onTodoListFinishMutate')
+  finishListModel.optimisticAddTask && finishListModel.optimisticAddTask(updatedTask)
+}
+
+const afterTodoListFinished = (updatedTask: Task) => {
+  console.log('afterTodoListFinished')
+  refetchFinishList(updatedTask)
+}
+  
+...
+
+<TabPanels>
+  <Item key="tasklist" textValue="Task List Panel">
+    <TaskList title="Today's Task"
+      model={todoListModel}
+      activeUnarchive={false}
+      onFinishMutate={onTodoListFinishMutate}
+      onArchiveMutate={onTodoListArchiveMutate}
+      afterFinished={afterTodoListFinished}
+      afterArchived={afterTodoListArchived}
+    />
+    <TaskList title="Finished" 
+      model={finishListModel}
+      activeUnarchive={false}
+      activeCreate={false}
+      onUnfinishMutate={onFinishListUnfinishMutate}
+      onArchiveMutate={onFinishListArchiveMutate}
+      afterUnfinished={afterFinishListUnfinished}
+      afterArchived={afterFinishListArchived}
+    />
+  </Item>
+  <Item key="archives" textValue="Archived Panel">
+    <TaskList title="Archived"
+      model={archiveListModel}
+      activeArchive={false}
+      activeCreate={false}
+      onUnarchiveMutate={onArchiveListUnarchiveMutate}
+      afterUnarchived={afterArchiveListUnarchived}
+    />
+  </Item>
+</TabPanels>
+```
+
+實際上三隻 Model 都長的一模一樣，差別只有這三行。
+```javascript
+// the differense between useTodoListModel, useFinishListModel, useArchiveListModel
+const utilList = utils.task.todoList
+const apiList = api.task.todoList
+const filterCondition: FilterCondition = task => task.isFinished !== true && task.isArchived !== true
+```
+
+另一個版本的 Code 在 _useTaskListModel.ts 這隻裡面，原本是將三支共用的地方都抽小 Functions 出來簡化，但抽到最後發現，其實差別就只有上面三行，因此考慮整併成一隻還是比較合理的。但目前還遇到一些 TypeScript 的問題。
+
+
+
+
 
 ### 添加測試的總結與詳細說明
 
