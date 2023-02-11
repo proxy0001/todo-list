@@ -14,7 +14,6 @@ import type { UserId, ListModel, Task, TaskList, CreateMethodOption } from '../.
 import { useState, useLayoutEffect } from 'react'
 import * as O from 'fp-ts/Option'
 import * as B from 'fp-ts/boolean'
-import * as A from 'fp-ts/Array'
 import { pipe } from 'fp-ts/lib/function'
 import { api } from '../../utils/api'
 import { genMutation, createUpdater, deleteUpdater, pushUpdater } from './utils'
