@@ -1,22 +1,19 @@
-import { type NextPage } from "next";
-import Head from "next/head";
-import { Heading, Flex } from '@adobe/react-spectrum';
-import AppHeader from '../components/AppHeader';
-import AppBody from '../components/AppBody';
-import TaskManager from '../components/TaskManager';
-import { useSession } from "next-auth/react";
-import usePrismaTaskModel from "../hooks/usePrismaTaskModel";
-import useDemoTaskModel from "../hooks/useDemoTaskModel";
+import { type NextPage } from "next"
+import Head from "next/head"
+import { Heading, Flex } from '@adobe/react-spectrum'
+import AppHeader from '../components/AppHeader'
+import AppBody from '../components/AppBody'
+import { useSession } from "next-auth/react"
+import useDemoTaskModel from "../hooks/useDemoTaskModel"
+import { TaskManager as TaskManagerV2 } from '../components/TaskManager/TaskManager'
+import { TaskManager as TaskManagerV1 } from '../components/TaskManager'
 
 const Home: NextPage = () => {
-  const { data: sessionData, status: sessionStatus } = useSession();
+  const { data: sessionData, status: sessionStatus } = useSession()
   
-  const userId = sessionData && sessionData.user?.id || undefined
+  const userId = sessionData && sessionData.user?.id || ''
   const modelProps = { userId }
   const demoModel = useDemoTaskModel(modelProps)
-  const prismaModel = usePrismaTaskModel(modelProps)
-  
-  const model = sessionData ? prismaModel : demoModel
   const isLoading = sessionStatus === 'loading'
   const userName = sessionData && sessionData.user?.name || 'bff'
   const pageTitle = sessionData ?
@@ -38,13 +35,17 @@ const Home: NextPage = () => {
             </Flex> :
             <>
               <Heading level={2}>{ pageTitle } </Heading>
-              <TaskManager model={model} />
+              {
+                sessionData ?
+                  <TaskManagerV2 userId={userId} /> :
+                  <TaskManagerV1 model={demoModel} />
+              }
             </>
           }
         </Flex>
       </AppBody>
     </>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home

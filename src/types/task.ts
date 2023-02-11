@@ -1,5 +1,4 @@
 import { z } from "zod"
-
 export const userId = z.string()
 export type UserId = z.infer<typeof userId>
 
@@ -70,3 +69,46 @@ export const taskSchema = {
   taskModel,
 }
 export default taskSchema
+
+// TRPCClientErrorLike
+const errorMessage = z.string()
+
+export const refetchMethodOption = z.object({
+  onSuccess: z.function().args(taskList).returns(z.void()).optional(),
+  onError: z.function().args(errorMessage).returns(z.void()).optional(),
+})
+
+export type RefetchMethodOption = z.infer<typeof refetchMethodOption>
+
+export const createMethodOption = z.object({
+  onMutate: z.function().args(noHeadTask).returns(z.void()).optional(),
+  onSuccess: z.function().args(task).returns(z.void()).optional(),
+  onError: z.function().args(errorMessage).returns(z.void()).optional(),
+})
+export type CreateMethodOption = z.infer<typeof createMethodOption>
+
+export const methodOption = z.object({
+  onMutate: z.function().args(task).returns(z.void()).optional(),
+  onSuccess: z.function().args(task).returns(z.void()).optional(),
+  onError: z.function().args(errorMessage).returns(z.void()).optional(),
+})
+export type MethodOption = z.infer<typeof methodOption>
+
+// FIXME: How to make optional args of function ?
+export const listModel = z.object({
+  userId,
+  taskList,
+  isLoading: z.boolean(),
+  isError: z.boolean(),
+  refetchList: z.function().args(refetchMethodOption.optional()).returns(z.void()).optional(),
+  createTask: z.function().args(noHeadTask, createMethodOption.optional()).returns(z.void()).optional(),
+  pushTask: z.function().args(task, methodOption.optional()).returns(z.void()).optional(),
+  finishTask: z.function().args(task, methodOption.optional()).returns(z.void()).optional(),
+  unfinishTask: z.function().args(task, methodOption.optional()).returns(z.void()).optional(),
+  archiveTask: z.function().args(task, methodOption.optional()).returns(z.void()).optional(),
+  unarchiveTask: z.function().args(task, methodOption.optional()).returns(z.void()).optional(),
+  deleteTask: z.function().args(task, methodOption.optional()).returns(z.void()).optional(),
+  optimisticAddTask: z.function().args(task).returns(z.void()).optional(),
+})
+
+export type ListModel = z.infer<typeof listModel>
