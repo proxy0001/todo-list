@@ -112,6 +112,9 @@ After:
 
 ```jsx
 // src/components/TaskManager/TaskManager.tsx
+const todoListModel = useTodoListModel({ userId })
+const finishListModel = useFinishListModel({ userId })
+const archiveListModel = useArchiveListModel({ userId })
 
 const onTodoListFinishMutate = (updatedTask: Task) => {
   console.log('onTodoListFinishMutate')
@@ -157,7 +160,149 @@ const afterTodoListFinished = (updatedTask: Task) => {
 </TabPanels>
 ```
 
-實際上三隻 Model 都長的一模一樣，差別只有這三行。
+useTodoListModel 等三隻，主要提供資料 CURD 的方法，其中最複雜的部分主要是 optimistic updates 的邏輯處理，三隻不同的地方其實只有獲取資料的條件不同而已。
+
+另一個複雜的點在於，樂觀更新關注的是當前顯示的 List，但 CURD 的方法關注的是後端 Task 表，而不是 View 的呈現。但樂觀更新觸發的點卻是執行 CURD 的方法，也就是說，當更新任務時，如果會影響到兩個 List 的顯示處理，例如需要從 A List 移動到 B List，事情就會變得比較複雜。需要知道哪個 Update 的方法，會影響到哪兩個 List 的呈現，才有辦法進行樂觀更新。
+
+```javascript
+
+export const useTodoListModel: UseTaskListModel = ({ userId = '' } = {}) => {
+  const utils = api.useContext()
+  const [ taskList, setTaskList ] = useState<TaskList>([])
+
+  // the differense between useTodoListModel, useFinishListModel, useArchiveListModel
+  const utilList = utils.task.todoList
+  const apiList = api.task.todoList
+  const filterCondition: FilterCondition = task => task.isFinished !== true && task.isArchived !== true
+  
+  // fetch data
+  const { data: newTaskList, refetch, isLoading, isError } = apiList.useQuery({ userId })
+  useLayoutEffect(() => {
+    setTaskList(newTaskList || [] as TaskList)
+  }, [newTaskList])
+
+  // generate all mutations
+  const createMutation = genMutation<CreateMutation>({
+    userId,
+    utilList: utilList,
+    apiMethod: api.task.create,
+    updater: createUpdater,
+  })
+  const deleteMutation = genMutation<DeleteMutation>({
+    userId,
+    utilList: utilList,
+    apiMethod: api.task.delete,
+    updater: deleteUpdater
+  })
+  const pushMutation = genMutation<PushMutation>({
+    userId,
+    utilList: utilList,
+    apiMethod: api.task.push,
+    updater: pushUpdater(filterCondition)
+  })
+
+  // methods
+  const createTask: ListModel['createTask'] = (noHeadTask, options = {}) => {
+    createMutation.mutate(noHeadTask, {
+      onSuccess: (data, variables, context) => {
+        options.onSuccess && options.onSuccess(data)
+      },
+      onError: (error, variables, context) => {
+        options.onError && options.onError(error.message)
+      },
+    })
+    options.onMutate && options.onMutate(noHeadTask)
+  }
+
+  const deleteTask: ListModel['deleteTask'] = (task, options = {}) => {
+    deleteMutation.mutate(task, {
+      onSuccess: (data, variables, context) => {
+        options.onSuccess && options.onSuccess(data)
+      },
+      onError: (error, variables, context) => {
+        options.onError && options.onError(error.message)
+      },
+    })
+    options.onMutate && options.onMutate(task)
+  }
+
+  const pushTask: ListModel['pushTask'] = (updatedTask, options = {}) => {
+    const isExist = taskList.some(task => task.id === updatedTask.id)
+    const { id, ...noHeadTask } = updatedTask
+    pipe(
+      O.some(isExist),
+      O.map(
+        B.match(
+          () => createTask(noHeadTask, options as CreateMethodOption),
+          () => pushMutation.mutate(updatedTask, {
+            onSuccess: (data, variables, context) => {
+              options.onSuccess && options.onSuccess(data)
+            },
+            onError: (error, variables, context) => {
+              options.onError && options.onError(error.message)
+            },
+          })
+        ),
+      ),
+    )
+    options.onMutate && options.onMutate(updatedTask)
+  }
+
+  const finishTask: ListModel['finishTask'] = (task, options = {}) => {
+    pushTask({ ...task, isFinished: true }, options)
+  }
+
+  const unfinishTask: ListModel['unfinishTask'] = (task, options = {}) => {
+    pushTask({ ...task, isFinished: false }, options)
+  }  
+
+  const archiveTask: ListModel['archiveTask'] = (task, options = {}) => {
+    pushTask({ ...task, isArchived: true }, options)
+  }
+
+  const unarchiveTask: ListModel['unarchiveTask'] = (task, options = {}) => {
+    pushTask({ ...task, isArchived: false }, options)
+  }
+
+  const refetchList: ListModel['refetchList'] = (options) => {
+    const run = async () => {
+      await utilList.cancel()
+      return await refetch()
+    }
+    run().then(({ data }) => {
+      options && options.onSuccess && options.onSuccess(data || [])
+    }).catch((error) => {
+      const message = 'refetch unknown error'
+      options && options.onError && options.onError(message)
+    })
+  }
+
+  const optimisticAddTask: ListModel['optimisticAddTask'] = (task) => {
+    const newTaskList = [task, ...taskList].sort((a, b) => a.id < b.id ? 1 : -1)
+    setTaskList(newTaskList)
+  }
+
+  return {
+    userId,
+    taskList,
+    isLoading,
+    isError,
+    createTask,
+    deleteTask,
+    pushTask,
+    finishTask,
+    unfinishTask,
+    archiveTask,
+    unarchiveTask,
+    refetchList,
+    optimisticAddTask,
+  }
+}
+
+```
+
+實際上三隻 Model 的 Code 都長的一模一樣，差別只有這三行。
+
 ```javascript
 // the differense between useTodoListModel, useFinishListModel, useArchiveListModel
 const utilList = utils.task.todoList
@@ -165,11 +310,34 @@ const apiList = api.task.todoList
 const filterCondition: FilterCondition = task => task.isFinished !== true && task.isArchived !== true
 ```
 
+
 另一個版本的 Code 在 _useTaskListModel.ts 這隻裡面，原本是將三支共用的地方都抽小 Functions 出來簡化，但抽到最後發現，其實差別就只有上面三行，因此考慮整併成一隻還是比較合理的。但目前還遇到一些 TypeScript 的問題。
 
+#### optimistic updates 的相關問題
 
+做 optimistic updates 的關係，有幾個延伸問題：
+1. create 如果做樂觀更新，在後端 API 回傳之前，會有一段時間不知道該 Task 的 id，如果這時候使用者對該任務做互動，會產生問題。
+2. react-query 的 onMutate，需要事先定義好，不能夠在事件發生之後，再傳入要執行的動作。目前的實作方式導致 Task 從 A List 移動到 B List 時，反而會先樂觀更新 B List ，再樂觀更新 A List，使用體驗上會閃一下。
+3. 進行樂觀更新之後，會 refetch 後端資料一次，如果快速進行前述動作數次，當 第一次的 refetch 後端資料回來之後，畫面顯示上可能已經是第二次的樂觀更新了。導致畫面會有閃爍，先變成第二次更新的狀態，再回到第一次的狀態，再變成第二次的狀態。
+4. 樂觀更新之後，有時候會產生 id 重複的問題。
 
+#### Review
 
+- 花的時間大多都是在 Type 的問題上，抽共用時，需要調用整合後的 tRPC 產生 APIs，有時候不太好獲取型別的定義。
+- 原本重構的目的便是後續維護更容易，其中也包含是否能夠更容易地處理 optimistic updates 的問題。目前是邏輯跟結構更為清晰單純，處理上述問題有變得容易，但還沒有到方便處理的程度。
+- 將思緒寫清楚之後，發現好像又可以再重構一次。主要的癥結點是我們有三個不同的 View 跟針對同一張表的 CURD 方法要管理。或許用這樣的結構思緒會更適合：
+  - taskModel: 提供整合後的方法
+    - todoListModel: 負責管理前端呈現的 todo list
+    - finishListModel: 負責管理前端呈現的 finish list
+    - archiveListModel: 負責管理前端呈現的 archive list
+    - taskTableModel: 負責提供 CURD 後端 Task 資料表的方法
+
+taskModel 提供的整合方法，以 finishTask 來說，會需要做這幾件事：
+1. 將 todo 變成 finished 之後
+2. 進行 todoList 跟 finishList 的樂觀更新
+3. 進行後端 Task 資料表的更新
+4. 進行 todoList 跟 finishList 的 refetch data，確保前後端資料的同步。
+    
 
 ### 添加測試的總結與詳細說明
 
