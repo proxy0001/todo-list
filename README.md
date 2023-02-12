@@ -7,7 +7,7 @@
 
 - [Online Demo](https://t3-todo-list.vercel.app/)
 - [Source Code](https://github.com/proxy0001/todo-list)
-- [總結與詳細說明](https://github.com/proxy0001/todo-list#總結與詳細說明)
+- [總結與詳細說明](https://github.com/proxy0001/todo-list#總結)
 - [添加測試的總結與詳細說明](https://github.com/proxy0001/todo-list#添加測試的總結與詳細說明)
 - [重構的總結與詳細說明](https://github.com/proxy0001/todo-list#重構的總結與詳細說明)
 
